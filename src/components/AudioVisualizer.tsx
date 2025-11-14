@@ -1,33 +1,61 @@
 import { motion } from 'framer-motion';
 import { useAppStore } from '../store/useAppStore';
+import { useAudioAnalyzer } from '../hooks/useAudioAnalyzer';
 
 export function AudioVisualizer() {
   const audioSnapshot = useAppStore((state) => state.audioSnapshot);
   const { fft, amplitude, bass, mid, treble, bpm, isPlaying } = audioSnapshot;
+  const { isEnabled, error, initializeAudio, stopAudio } = useAudioAnalyzer();
 
   return (
     <div className="glass-morphism p-6 space-y-4">
       <div className="flex items-center justify-between mb-4">
         <h2 className="text-xl font-bold gradient-text">Audio Analysis</h2>
-        <div className="flex items-center gap-2">
-          <motion.div
-            className={`w-3 h-3 rounded-full ${
-              isPlaying ? 'bg-green-400' : 'bg-red-400'
-            }`}
-            animate={{
-              scale: isPlaying ? [1, 1.2, 1] : 1,
-              opacity: isPlaying ? [1, 0.6, 1] : 0.5,
-            }}
-            transition={{
-              duration: 1,
-              repeat: Infinity,
-            }}
-          />
-          <span className="text-sm text-gray-300">
-            {isPlaying ? 'Playing' : 'Paused'}
-          </span>
+        <div className="flex items-center gap-3">
+          {!isEnabled ? (
+            <motion.button
+              onClick={initializeAudio}
+              className="px-4 py-2 bg-gradient-to-r from-cyan-500 to-purple-500 text-white rounded-lg text-sm font-medium hover:opacity-90 transition-opacity"
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+            >
+              Start Audio
+            </motion.button>
+          ) : (
+            <motion.button
+              onClick={stopAudio}
+              className="px-4 py-2 bg-red-500 text-white rounded-lg text-sm font-medium hover:opacity-90 transition-opacity"
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+            >
+              Stop Audio
+            </motion.button>
+          )}
+          <div className="flex items-center gap-2">
+            <motion.div
+              className={`w-3 h-3 rounded-full ${
+                isPlaying ? 'bg-green-400' : 'bg-red-400'
+              }`}
+              animate={{
+                scale: isPlaying ? [1, 1.2, 1] : 1,
+                opacity: isPlaying ? [1, 0.6, 1] : 0.5,
+              }}
+              transition={{
+                duration: 1,
+                repeat: Infinity,
+              }}
+            />
+            <span className="text-sm text-gray-300">
+              {isPlaying ? 'Playing' : 'Paused'}
+            </span>
+          </div>
         </div>
       </div>
+      {error && (
+        <div className="mb-4 p-3 bg-red-500/20 border border-red-500/50 rounded-lg text-sm text-red-300">
+          {error}
+        </div>
+      )}
 
       {/* Spectrum Bars */}
       <div className="space-y-2">

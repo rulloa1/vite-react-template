@@ -1,5 +1,6 @@
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAppStore } from '../store/useAppStore';
+import { useDeviceManager } from '../hooks/useDeviceManager';
 
 const deviceIcons = {
   bulb: '💡',
@@ -15,16 +16,44 @@ const statusColors = {
 
 export function DeviceManager() {
   const devices = useAppStore((state) => state.devices);
+  const {
+    isScanning,
+    error,
+    isBluetoothAvailable,
+    requestDevice,
+    disconnectDevice,
+    removeDevice,
+  } = useDeviceManager();
 
   return (
     <div className="glass-morphism p-6 space-y-4">
       <div className="flex items-center justify-between mb-4">
         <h2 className="text-xl font-bold gradient-text">Device Manager</h2>
-        <div className="text-sm text-gray-400">
-          {devices.filter((d) => d.status === 'connected').length}/
-          {devices.length} connected
+        <div className="flex items-center gap-3">
+          <div className="text-sm text-gray-400">
+            {devices.filter((d) => d.status === 'connected').length}/
+            {devices.length} connected
+          </div>
+          {isBluetoothAvailable ? (
+            <motion.button
+              onClick={requestDevice}
+              disabled={isScanning}
+              className="px-4 py-2 bg-gradient-to-r from-cyan-500 to-purple-500 text-white rounded-lg text-sm font-medium hover:opacity-90 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed"
+              whileHover={{ scale: isScanning ? 1 : 1.05 }}
+              whileTap={{ scale: isScanning ? 1 : 0.95 }}
+            >
+              {isScanning ? 'Scanning...' : 'Scan Devices'}
+            </motion.button>
+          ) : (
+            <div className="text-xs text-yellow-400">Bluetooth unavailable</div>
+          )}
         </div>
       </div>
+      {error && (
+        <div className="mb-4 p-3 bg-red-500/20 border border-red-500/50 rounded-lg text-sm text-red-300">
+          {error}
+        </div>
+      )}
 
       <div className="space-y-3 max-h-96 overflow-y-auto scrollbar-hide">
         <AnimatePresence mode="popLayout">
@@ -123,6 +152,28 @@ export function DeviceManager() {
                       </span>
                     </div>
                   )}
+
+                  {/* Device Actions */}
+                  <div className="flex gap-2 mt-2">
+                    {device.status === 'connected' && (
+                      <motion.button
+                        onClick={() => disconnectDevice(device.id)}
+                        className="px-2 py-1 text-xs bg-yellow-500/20 text-yellow-300 rounded hover:bg-yellow-500/30 transition-colors"
+                        whileHover={{ scale: 1.05 }}
+                        whileTap={{ scale: 0.95 }}
+                      >
+                        Disconnect
+                      </motion.button>
+                    )}
+                    <motion.button
+                      onClick={() => removeDevice(device.id)}
+                      className="px-2 py-1 text-xs bg-red-500/20 text-red-300 rounded hover:bg-red-500/30 transition-colors"
+                      whileHover={{ scale: 1.05 }}
+                      whileTap={{ scale: 0.95 }}
+                    >
+                      Remove
+                    </motion.button>
+                  </div>
                 </div>
               </div>
             </motion.div>
