@@ -1,7 +1,11 @@
 import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
-import { cloudflare } from "@cloudflare/vite-plugin";
 
 export default defineConfig({
-  plugins: [react(), cloudflare()],
+  plugins: [react()],
+  server: {
+    host: true, // Listen on all network interfaces
+    port: 5173,
+    open: true, // Automatically open browser
+  },
 });
