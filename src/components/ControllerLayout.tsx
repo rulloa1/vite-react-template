@@ -3,12 +3,8 @@ import { ThreeScene } from './ThreeScene';
 import { AudioVisualizer } from './AudioVisualizer';
 import { DeviceManager } from './DeviceManager';
 import { LightControls } from './LightControls';
-import { useDeviceManager } from '../hooks/useDeviceManager';
 
 export function ControllerLayout() {
-  // Initialize device manager (audio analyzer is initialized in AudioVisualizer)
-  useDeviceManager();
-
   return (
     <div className="min-h-screen w-full overflow-hidden bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900">
       {/* Header */}
