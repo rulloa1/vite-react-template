@@ -1,10 +1,20 @@
-import { useEffect, useRef, useState } from 'react';
-import { useAppStore, AudioSnapshot } from '../store/useAppStore';
+import { useCallback, useEffect, useRef, useState } from "react";
+import { useAppStore, AudioSnapshot } from "../store/useAppStore";
 
 /**
  * Real audio analyzer using Web Audio API
  * Analyzes microphone input or system audio to extract frequency data
  */
+type WindowWithWebkitAudioContext = Window & {
+  webkitAudioContext: typeof AudioContext;
+};
+
+const hasWebkitAudioContext = (
+  win: Window,
+): win is WindowWithWebkitAudioContext => {
+  return "webkitAudioContext" in win;
+};
+
 export function useAudioAnalyzer() {
   const setAudioSnapshot = useAppStore((state) => state.setAudioSnapshot);
   const [isEnabled, setIsEnabled] = useState(false);
@@ -36,7 +46,13 @@ export function useAudioAnalyzer() {
       streamRef.current = stream;
 
       // Create audio context
-      const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
+      const AudioContextConstructor =
+        window.AudioContext ||
+        (hasWebkitAudioContext(window) ? window.webkitAudioContext : null);
+      if (!AudioContextConstructor) {
+        throw new Error("Web Audio API is not supported in this browser");
+      }
+      const audioContext = new AudioContextConstructor();
       audioContextRef.current = audioContext;
 
       // Create analyser node
@@ -57,16 +73,21 @@ export function useAudioAnalyzer() {
       setIsEnabled(true);
       setError(null);
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Failed to access audio';
+      const errorMessage =
+        err instanceof Error ? err.message : "Failed to access audio";
       setError(errorMessage);
       setIsEnabled(false);
-      console.error('Audio initialization error:', err);
+      console.error("Audio initialization error:", err);
     }
   };
 
   // Analyze audio data
-  const analyzeAudio = () => {
-    if (!analyserRef.current || !dataArrayRef.current || !audioContextRef.current) {
+  const analyzeAudio = useCallback(() => {
+    if (
+      !analyserRef.current ||
+      !dataArrayRef.current ||
+      !audioContextRef.current
+    ) {
       return;
     }
 
@@ -107,7 +128,8 @@ export function useAudioAnalyzer() {
         for (let i = 1; i < detector.peaks.length; i++) {
           intervals.push(detector.peaks[i] - detector.peaks[i - 1]);
         }
-        const avgInterval = intervals.reduce((sum, val) => sum + val, 0) / intervals.length;
+        const avgInterval =
+          intervals.reduce((sum, val) => sum + val, 0) / intervals.length;
         detector.bpm = Math.round(60000 / avgInterval);
       }
     }
@@ -132,7 +154,7 @@ export function useAudioAnalyzer() {
 
     setAudioSnapshot(snapshot);
     animationFrameRef.current = requestAnimationFrame(analyzeAudio);
-  };
+  }, [setAudioSnapshot]);
 
   // Start analysis loop
   useEffect(() => {
@@ -145,7 +167,7 @@ export function useAudioAnalyzer() {
         cancelAnimationFrame(animationFrameRef.current);
       }
     };
-  }, [isEnabled]);
+  }, [analyzeAudio, isEnabled]);
 
   // Cleanup on unmount
   useEffect(() => {
@@ -194,4 +216,3 @@ export function useAudioAnalyzer() {
     },
   };
 }
-
